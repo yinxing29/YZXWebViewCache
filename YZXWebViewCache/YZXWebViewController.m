@@ -34,19 +34,19 @@
     
     self.title = @"WebViewCache";
     
-    NSURL *url = [NSURL URLWithString:@"http://172.17.124.102:8888/webViewTest.html"];
+    NSURL *url = [NSURL URLWithString:@"http://172.17.124.102:8080/webViewTest.html"];
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
-    NSDictionary *cachedHeaders = [[NSUserDefaults standardUserDefaults] objectForKey:url.absoluteString];
-    if (cachedHeaders) {
-        NSString *etag = [cachedHeaders objectForKey:@"Etag"];
-        if (etag) {
-            [request setValue:etag forHTTPHeaderField:@"If-None-Match"];
-        }
-        NSString *lastModified = [cachedHeaders objectForKey:@"Last-Modified"];
-        if (lastModified) {
-            [request setValue:lastModified forHTTPHeaderField:@"If-Modified-Since"];
-        }
-    }
+//    NSDictionary *cachedHeaders = [[NSUserDefaults standardUserDefaults] objectForKey:url.absoluteString];
+//    if (cachedHeaders) {
+//        NSString *etag = [cachedHeaders objectForKey:@"Etag"];
+//        if (etag) {
+//            [request setValue:etag forHTTPHeaderField:@"If-None-Match"];
+//        }
+//        NSString *lastModified = [cachedHeaders objectForKey:@"Last-Modified"];
+//        if (lastModified) {
+//            [request setValue:lastModified forHTTPHeaderField:@"If-Modified-Since"];
+//        }
+//    }
     
     NSLog(@"------ %f",[[NSDate date] timeIntervalSince1970] * 1000);
     [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
@@ -58,14 +58,23 @@
         if (httpResponse.statusCode == 304 || httpResponse.statusCode == 0) {
             //如果状态码为304或者0(网络不通?)，则设置request的缓存策略为读取本地缓存
             [request setCachePolicy:NSURLRequestReturnCacheDataElseLoad];
+            
+            //为更新的情况下读取缓存
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.webView loadRequest:request];
+            });
         }else {
             //如果状态码为200，则保存本次的response headers，并设置request的缓存策略为忽略本地缓存，重新请求数据
             [[NSUserDefaults standardUserDefaults] setObject:httpResponse.allHeaderFields forKey:request.URL.absoluteString];
-            [request setCachePolicy:NSURLRequestReloadIgnoringCacheData];
+            
+            //为200时加载网页
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.webView loadHTMLString:[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]
+                                     baseURL:nil];
+            });
         }
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self.webView loadRequest:request];
-        });
+        
+        
     }] resume];
     
     [self.view addSubview:self.start];
