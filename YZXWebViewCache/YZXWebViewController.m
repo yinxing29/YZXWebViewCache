@@ -34,8 +34,9 @@
     
     self.title = @"WebViewCache";
     
-    NSURL *url = [NSURL URLWithString:@"http://172.17.124.102:8080/webViewTest.html"];
+    NSURL *url = [NSURL URLWithString:@"http://192.168.71.170:8080/webViewTest.html"];
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
+    request.HTTPMethod = @"HEAD";
     NSDictionary *cachedHeaders = [[NSUserDefaults standardUserDefaults] objectForKey:url.absoluteString];
     if (cachedHeaders) {
         NSString *etag = [cachedHeaders objectForKey:@"Etag"];
