@@ -34,8 +34,9 @@
     
     self.title = @"WebViewCache";
     
-    NSURL *url = [NSURL URLWithString:@"http://192.168.71.170:8080/webViewTest.html"];
+    NSURL *url = [NSURL URLWithString:@"https:www.baidu.com"];
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
+    //修改请求方式，使其只请求到responseHeader
     request.HTTPMethod = @"HEAD";
     NSDictionary *cachedHeaders = [[NSUserDefaults standardUserDefaults] objectForKey:url.absoluteString];
     if (cachedHeaders) {
@@ -68,6 +69,8 @@
         
         //未更新的情况下读取缓存
         dispatch_async(dispatch_get_main_queue(), ^{
+            //判断结束之后，修改请求方式，加载网页
+            request.HTTPMethod = @"GET";
             [self.webView loadRequest:request];
         });
     }] resume];
